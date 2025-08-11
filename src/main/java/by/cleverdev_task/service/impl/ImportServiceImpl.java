@@ -41,25 +41,39 @@ public class ImportServiceImpl implements ImportService {
     private final PatientNoteMapper noteMapper;
 
     public void importAllNotes() {
-        List<OldClientDto> clients = oldSystemClient.getAllClients();
-        log.info("Import: {} clients received", clients.size());
+        try {
+            List<OldClientDto> clients = oldSystemClient.getAllClients();
+            log.info("Import: {} clients received", clients.size());
 
-        for (OldClientDto client : clients) {
-            List<OldNoteDto> notes = oldSystemClient.getNotes(
-                    client.agency(), client.guid(),
-                    IMPORT_DATE_FROM, IMPORT_DATE_TO
-            );
-
-            for (OldNoteDto dto : notes) {
-                try {
-                    importSingleNote(dto);
-                } catch (Exception e) {
-                    log.error("Error processing note {}: {}", dto.guid(), e.getMessage(), e);
-                }
+            for (OldClientDto client : clients) {
+                processClientNotes(client);
             }
+        } catch (Exception e) {
+            log.error("Failed to complete import process: {}", e.getMessage(), e);
         }
 
         log.info("Import completed");
+    }
+
+    private void processClientNotes(OldClientDto client) {
+        List<OldNoteDto> notes;
+        try {
+            notes = oldSystemClient.getNotes(
+                    client.agency(), client.guid(),
+                    IMPORT_DATE_FROM, IMPORT_DATE_TO
+            );
+        } catch (Exception e) {
+            log.error("Failed to get notes for client {}: {}", client.guid(), e.getMessage(), e);
+            return;
+        }
+
+        for (OldNoteDto dto : notes) {
+            try {
+                importSingleNote(dto);
+            } catch (Exception e) {
+                log.error("Error processing note {}: {}", dto.guid(), e.getMessage(), e);
+            }
+        }
     }
 
     private void importSingleNote(OldNoteDto dto) {
