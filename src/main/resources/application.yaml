@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: cleverdev_task
+  datasource:
+    url: jdbc:postgresql://localhost:5440/import_service
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+
+import:
+  schedule: "0 15 */2 * * *"
